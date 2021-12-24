@@ -27,9 +27,9 @@ class Node:
             return self.parent.level() + 1
 
     def add(self, other):
-        result = Pair(None, self, other)
-        self.parent = result
-        other.parent = result
+        result = Pair(None, None, None)
+        result.left = self.clone(result)
+        result.right = other.clone(result)
         result.reduce()
         return result
     
@@ -60,6 +60,9 @@ class Literal(Node):
 
     def magnitude(self):
         return self.value
+    
+    def clone(self, newparent):
+        return Literal(newparent, self.value)
 
 class Pair(Node):
     def __init__(self, parent, left, right):
@@ -86,6 +89,12 @@ class Pair(Node):
 
     def magnitude(self):
         return 3 * self.left.magnitude() + 2 * self.right.magnitude()
+
+    def clone(self, newparent):
+        p = Pair(newparent, None, None)
+        p.left = self.left.clone(p)
+        p.right = self.right.clone(p)
+        return p
 
 def sfn_factory(input, parent):
     if isinstance(input, list):
@@ -133,9 +142,22 @@ def explode(root, node):
     else:
         node.parent.left = Literal(node.parent, 0)
 
-root = sfn_factory(input.numbers[0], None)
 
-for to_add in map(lambda a: sfn_factory(a, None), input.numbers[1:]):
+inputs = list(map(lambda a: sfn_factory(a, None), input.numbers))
+
+root = inputs[0]
+
+for to_add in inputs[1:]:
     root = root.add(to_add)
 
 print(root.magnitude())
+
+highest = 0
+for a in range(len(inputs)):
+    for b in range(len(inputs)):
+        if a == b:
+            continue
+        m = inputs[a].add(inputs[b]).magnitude()
+        if m > highest:
+            highest = m
+print(highest)
